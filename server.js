@@ -3,18 +3,31 @@ const app = express()
 const db = require('./db')
 const bodyParser = require('body-parser')
 app.use(bodyParser.json())
-
-const menuRoutes = require('./routes/menuroutes');
-app.use('/menu',menuRoutes)
+const passport = require('./auth')
 const personRoutes = require('./routes/personroute');
-app.use('/person',personRoutes)
+const menuRoute = require('./routes/menuroutes');
 
-app.get('/', function (req, res) {
+//Middleware function
+
+const logRequest = (req,res,next) =>{
+  console.log(`${new Date().toLocaleString()} Request made to : ${req.originalUrl}` );
+  next(); //move on to next phase
+}
+
+app.use(passport.initialize());
+const authenticatemiddleware = passport.authenticate('local',{session:false}) 
+
+app.use(logRequest);//if we want middleware to all routes 
+app.use('/person',authenticatemiddleware,personRoutes)
+app.use('/menu',menuRoute)
+
+app.get('/',function (req, res) {
   res.send('Hello, How Can I help You?')
 })
-app.get('/pasta',function(req,res){
+app.get('/pasta',logRequest,function(req,res){
   res.send('Do you want white sauce or Red sauce pasta?')
-})
+})//middleware in single route
+
 
 app.get('/pizza',function(req,res){
   var topings ={
